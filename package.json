@@ -1,7 +1,27 @@
 {
   "name": "campaignjs",
+  "description":"Subscribe contacts to predefined campaign actions and send emails, SMSs and any other action based on customizable triggers. Useful for sending emails to contacts, posting to social media and most other scenarios requiring predefined actions being triggered when the conditions is met.",
+  "keywords":[
+    "campaign",
+    "campaignjs",
+    "subscribe",
+    "trigger",
+    "triggers",
+    "actions",
+    "email",
+    "emails",
+    "sms",
+    "smss",
+    "contact",
+    "contacts",
+    "dotenv",
+    "moment",
+    "pg",
+    "pg-hstore",
+    "sequelize",
+    "jest"
+  ],
   "version": "1.0.0",
-  "description": "sequelize moment",
   "main": "index.js",
   "scripts": {
     "test": "jest",
@@ -10,13 +30,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^16.0.1",
-    "moment": "^2.29.3",
-    "pg": "^8.7.3",
-    "pg-hstore": "^2.3.4",
-    "sequelize": "^6.20.1"
+    "dotenv": "16.0.1",
+    "moment": "2.29.3",
+    "pg": "8.7.3",
+    "pg-hstore": "2.3.4",
+    "sequelize": "6.20.1"
   },
   "devDependencies": {
-    "jest": "^28.1.1"
+    "jest": "28.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DanielZambelli/campaignJS"
   }
 }
