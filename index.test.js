@@ -9,7 +9,7 @@ const contacts = {
 
 const options = {
   pgDb: process.env.PGDB,
-  schema: undefined,
+  schema: 'campaignjs_test',
   tablePrefix: 'campaign_',
   getContacts: (contactIds) => contactIds.reduce((map,contactId) => ({ ...map, [contactId]: contacts[contactId] }), {}),
   interval: 2000,
@@ -25,6 +25,7 @@ describe(ClientClass.name, () => {
   afterAll(async () => {
     const client = new ClientClass({ ...options, id: 'test_quit' })
     client.stop()
+    await client.Subs.sequelize.dropSchema(client.schema)
     await client.quit()
   })
 

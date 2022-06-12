@@ -1,9 +1,9 @@
 # CampaignJS
 Subscribe contacts to predefined campaign actions and send emails, SMSs and any other action based on customizable triggers. Useful for sending emails to contacts, posting to social media and most other scenarios requiring predefined actions being triggered when the conditions is met.
 
-## Prequireses
-* Node
-* PostgresSQL
+## Prerequisites
+* Node 
+* Postgres
 
 ## Install
 `npm install CampaignJS`
@@ -32,7 +32,7 @@ const MyCampaign = new CampaignJS({
 ```
 
 Or extend and instantiate for convenient reuse:
-```
+``` js
 const CampaignJS = require('CampaignJS')
 
 class ClientCampaignJS extends CampaignJS{
