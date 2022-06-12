@@ -1,0 +1,22 @@
+{
+  "name": "campaignjs",
+  "version": "1.0.0",
+  "description": "sequelize moment",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watchAll"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "moment": "^2.29.3",
+    "pg": "^8.7.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.20.1"
+  },
+  "devDependencies": {
+    "jest": "^28.1.1"
+  }
+}
