@@ -150,19 +150,9 @@ module.exports = class CampaignJS{
     if(!skipIntervals) this.stop()
     for(const action of this.actions){
       const subscribers = await getTriggeredSubscribers.call(this, { action })
-
-      // map and join
       const contacts = await getContactsMap.call(this, subscribers.map(sub => sub.contact_id))
-      for(const sub of subscribers){
-        if(contacts[sub.contact_id])
-          sub.contact = contacts[sub.contact_id]
-      }
-
-      // process action
       for(const subscriber of subscribers){
-        // TODO: pass more infor
-        // TODO: test that the correct contact and info is passed
-        await this.callbacks[action.callback](subscriber.contact, action.params)
+        await this.callbacks[action.callback]({ contact: contacts?.[subscriber.contact_id], subscriber, campaignId: this.id, action })
         await this.Tracks.create({ contact_id: subscriber.contact_id, campaign_id: this.id, action_id: action.id })
       }
     }
