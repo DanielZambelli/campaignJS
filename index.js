@@ -50,10 +50,12 @@ function getTriggeredSubscribers({ action }){
   const SubsTable = this.schema ? `${this.schema}.${this.Subs.tableName}` : this.Subs.tableName
   const tracksTable = this.schema ? `${this.schema}.${this.Tracks.tableName}` : this.Tracks.tableName
   const sqlRecurring = action.trigger.type === 'recurring' ? `and "createdAt" >= NOW() - INTERVAL '${action.trigger.intervalDays} DAY'` : ''
+  const sqlAfter = action.trigger.after && action.trigger.intervalDays ? `and contact_id in (select distinct contact_id from ${tracksTable} where campaign_id = '${this.id}' and action_id = '${action.trigger.after}' and "createdAt" <= NOW() - INTERVAL '${action.trigger.intervalDays} DAYS')` : ''
+
   sql = `
     select * from ${SubsTable} where active = true and "createdAt" < NOW() - INTERVAL '0 DAY' and campaign_id = '${this.id}' and contact_id not in (
       select distinct contact_id from ${tracksTable} where campaign_id = '${this.id}' and action_id = '${action.id}' ${sqlRecurring}
-    );
+    ) ${sqlAfter} ;
   `
   return this.Db.query(sql).then(([res]) => res)
 }
@@ -71,7 +73,8 @@ module.exports = class CampaignJS{
     tablePrefix='campaign_',
     getContacts,
     contactIdField,
-    intervalMs=1000 * 60 * 30, //every 30min
+    // every 5 second in development and else every 30min
+    intervalMs=process.env.NODE_ENV === 'development' ? 1000 * 5 : 1000 * 60 * 30,
     id,
     callbacks={},
     actions=[],
@@ -102,7 +105,11 @@ module.exports = class CampaignJS{
     this.stop()
     await this.sync()
     await Promise.all([ this.Subs.sync(), this.Tracks.sync() ])
-    this.timer = setInterval(this.process.bind(this, false), this.intervalMs)
+    this.timer = setInterval(() => {
+      this.stop().bind(this)
+      this.process.bind(this)
+      this.start().bind(this)
+    }, this.intervalMs)
   }
 
   stop(){
@@ -115,7 +122,7 @@ module.exports = class CampaignJS{
     await Promise.all([ this.Subs.sync({ force }), this.Tracks.sync({ force }) ])
   }
 
-  async quit(){
+  async close(){
     await this.Db.close()
   }
 
@@ -126,14 +133,12 @@ module.exports = class CampaignJS{
     for (let i = 0; i < contactIds.length; i += chunkSize) {
       chunks.push(contactIds.slice(i, i + chunkSize))
     }
-
     const moment = require('moment')
     const subs = chunks.map((chunk, index) => chunk.map(contactId => ({
       contact_id: contactId,
       campaign_id: this.id,
       createdAt: moment().add(index, 'days').toDate()
     }))).reduce((list,items) => list.concat(items), [])
-
     await this.Subs.destroy({ where: { contact_id: contactIds, campaign_id: this.id } })
     await this.Subs.bulkCreate(subs, { ignoreDuplicates: true })
   }
@@ -146,8 +151,7 @@ module.exports = class CampaignJS{
     return this.Subs.findAll({ where: { campaign_id: this.id, active: true }}).then(res => res.map(sub => sub.contact_id))
   }
 
-  async process(skipIntervals=true){
-    if(!skipIntervals) this.stop()
+  async process(){
     for(const action of this.actions){
       const subscribers = await getTriggeredSubscribers.call(this, { action })
       const contacts = await getContactsMap.call(this, subscribers.map(sub => sub.contact_id))
@@ -156,6 +160,5 @@ module.exports = class CampaignJS{
         await this.Tracks.create({ contact_id: subscriber.contact_id, campaign_id: this.id, action_id: action.id })
       }
     }
-    if(!skipIntervals) await this.start()
   }
 }

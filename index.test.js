@@ -1,5 +1,7 @@
 const moment = require('moment')
 const classFixture = require('./index')
+const util = require('util')
+const log = (obj) => console.log(util.inspect(obj, {showHidden: false, depth: null, colors: true}))
 
 const contacts = {
   1: { uid: 1, email: 'julie@gmail.com', name: 'Julie Doe' },
@@ -55,9 +57,9 @@ describe(TestFixture.name, () => {
   })
 
   afterAll(async () => {
-    const client = new TestFixture('test_quit')
+    const client = new TestFixture('test_close')
     await client.Subs.sequelize.dropSchema(client.schema)
-    await client.quit()
+    await client.close()
   })
 
   it('should be defined', () => {
@@ -366,4 +368,50 @@ describe(TestFixture.name, () => {
       ]
     ])
   })
+
+  it('should process - once after', async () => {
+    const client = new TestFixture('test_process_6', [{
+      id: 'action2',
+      callback: 'testCallback',
+      params: { msg: 'hello world' },
+      trigger: { type: 'once', after: 'action1', intervalDays: 2 }
+    }])
+    await client.subscribe([1,2,3])
+    const pastDate = moment().subtract(5, 'days').toDate()
+    await client.Tracks.bulkCreate([
+      { contact_id: 1, campaign_id: client.id, action_id: 'action1', createdAt: pastDate },
+      { contact_id: 2, campaign_id: client.id, action_id: 'action1', createdAt: pastDate },
+      { contact_id: 2, campaign_id: client.id, action_id: 'action2' },
+      // { contact_id: 3, campaign_id: client.id, action_id: 'action1' },
+    ], { ignoreDuplicates: true })
+    await client.process()
+    await client.process()
+    await client.process()
+    const res = [ await client.inspectTracks() ]
+    expect(res).toEqual([
+      [
+        {
+          contact_id: 1,
+          campaign_id: 'test_process_6',
+          action_id: 'action1'
+        },
+        {
+          contact_id: 2,
+          campaign_id: 'test_process_6',
+          action_id: 'action1'
+        },
+        {
+          contact_id: 2,
+          campaign_id: 'test_process_6',
+          action_id: 'action2'
+        },
+        {
+          contact_id: 1,
+          campaign_id: 'test_process_6',
+          action_id: 'action2'
+        }
+      ]
+    ])
+  })
+
 })
