@@ -126,7 +126,7 @@ module.exports = class CampaignJS{
     await this.Db.close()
   }
 
-  async subscribe(contactIds, distributedDays = 1){
+  async subscribe(contactIds, distributedDays = 1, hour = null){
     if(distributedDays > contactIds.length) distributedDays = contactIds.length
     const chunkSize = Math.round(contactIds.length / distributedDays)
     const chunks = []
@@ -134,11 +134,12 @@ module.exports = class CampaignJS{
       chunks.push(contactIds.slice(i, i + chunkSize))
     }
     const moment = require('moment')
-    const subs = chunks.map((chunk, index) => chunk.map(contactId => ({
-      contact_id: contactId,
-      campaign_id: this.id,
-      createdAt: moment().add(index, 'days').toDate()
-    }))).reduce((list,items) => list.concat(items), [])
+    const subs = chunks.map((chunk, index) => chunk.map(contactId => {
+      const createdAt = hour
+        ? moment().add(index, 'days').set({ "hour": hour }).toDate()
+        : moment().add(index, 'days').toDate()
+      return { contact_id: contactId, campaign_id: this.id, createdAt }
+    })).reduce((list,items) => list.concat(items), [])
     await this.Subs.destroy({ where: { contact_id: contactIds, campaign_id: this.id } })
     await this.Subs.bulkCreate(subs, { ignoreDuplicates: true })
   }
